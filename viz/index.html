@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A.E.G.I.S. — MoK Loss Visualisation</title>
+    <meta name="description" content="Interactive visualization of the Minimum-of-K loss function used in A.E.G.I.S. multi-modal trajectory prediction">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated background particles -->
+    <canvas id="particles-bg"></canvas>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-glow"></div>
+            <div class="logo-block">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 48 48" fill="none">
+                        <path d="M24 4L42 14V34L24 44L6 34V14L24 4Z" stroke="url(#grad1)" stroke-width="2" fill="none"/>
+                        <path d="M24 12L36 18V30L24 36L12 30V18L24 12Z" stroke="url(#grad2)" stroke-width="1.5" fill="none" opacity="0.7"/>
+                        <circle cx="24" cy="24" r="4" fill="url(#grad3)"/>
+                        <defs>
+                            <linearGradient id="grad1" x1="6" y1="4" x2="42" y2="44">
+                                <stop offset="0%" stop-color="#6C5CE7"/>
+                                <stop offset="100%" stop-color="#00D2FF"/>
+                            </linearGradient>
+                            <linearGradient id="grad2" x1="12" y1="12" x2="36" y2="36">
+                                <stop offset="0%" stop-color="#A29BFE"/>
+                                <stop offset="100%" stop-color="#74B9FF"/>
+                            </linearGradient>
+                            <radialGradient id="grad3" cx="50%" cy="50%">
+                                <stop offset="0%" stop-color="#DFE6E9"/>
+                                <stop offset="100%" stop-color="#6C5CE7"/>
+                            </radialGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>A.E.G.I.S.</h1>
+                    <p class="logo-subtitle">Minimum-of-K Loss  ·  Interactive Breakdown</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Canvas Section -->
+        <section class="canvas-section">
+            <div class="canvas-card">
+                <div class="canvas-header">
+                    <h2>Trajectory Prediction Arena</h2>
+                    <div class="canvas-controls">
+                        <button id="btn-reset" class="ctrl-btn" title="Reset">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        </button>
+                        <button id="btn-play" class="ctrl-btn primary" title="Play Animation">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                        </button>
+                        <button id="btn-step" class="ctrl-btn" title="Step Forward">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 15,12 5,21" fill="currentColor"/><line x1="19" y1="3" x2="19" y2="21"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="trajectory-canvas" width="800" height="500"></canvas>
+                    <div class="canvas-overlay" id="canvas-overlay">
+                        <span class="overlay-text">Click <strong>Play</strong> to begin</span>
+                    </div>
+                </div>
+                <div class="canvas-legend">
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #00D2FF"></span>
+                        <span>Ground Truth</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #6C5CE7"></span>
+                        <span>Mode 1</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #FDCB6E"></span>
+                        <span>Mode 2</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-dot" style="background: #E17055"></span>
+                        <span>Mode 3</span>
+                    </div>
+                    <div class="legend-item winner-indicator" id="winner-label">
+                        <span class="legend-dot winner-dot"></span>
+                        <span>Winner: —</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MoK Step-by-Step Breakdown -->
+        <section class="steps-section">
+            <h2 class="section-title">How Minimum-of-K Forces Diversity</h2>
+            <p class="section-subtitle">Step-by-step breakdown of the winner-takes-all loss logic</p>
+
+            <div class="steps-grid">
+                <div class="step-card" data-step="1">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">📐</div>
+                    <h3>Compare All Modes</h3>
+                    <p>The ground truth curve is compared against all K=3 predicted trajectories using Huber Loss (Smooth L₁).</p>
+                    <div class="step-formula">
+                        <code>loss_k = SmoothL1(pred_k, gt)</code>
+                    </div>
+                </div>
+                <div class="step-card" data-step="2">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">🏆</div>
+                    <h3>Find the Winner</h3>
+                    <p>For each sample, find the mode index with the <em>minimum</em> loss — this is the "best guess".</p>
+                    <div class="step-formula">
+                        <code>best = argmin(losses, dim=1)</code>
+                    </div>
+                </div>
+                <div class="step-card" data-step="3">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">⚡</div>
+                    <h3>Reward the Winner</h3>
+                    <p>Only backpropagate gradients through the winning mode. The other two modes receive <strong>zero penalty</strong>.</p>
+                    <div class="step-formula">
+                        <code>loss = losses[best_mode]</code>
+                    </div>
+                </div>
+                <div class="step-card" data-step="4">
+                    <div class="step-number">04</div>
+                    <div class="step-icon">🌊</div>
+                    <h3>Modes Diversify</h3>
+                    <p>Without punishment, losing modes are free to explore different directions, naturally covering the multi-modal future space.</p>
+                    <div class="step-formula">
+                        <code>diversity → guaranteed</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison: MSE vs MoK -->
+        <section class="comparison-section">
+            <h2 class="section-title">The Mode Collapse Problem</h2>
+            <p class="section-subtitle">Why standard MSE destroys multi-modality</p>
+
+            <div class="comparison-grid">
+                <div class="comparison-card bad">
+                    <div class="comparison-header">
+                        <span class="comparison-badge bad-badge">❌ Standard MSE</span>
+                        <h3>Mode Collapse</h3>
+                    </div>
+                    <canvas id="mse-canvas" width="350" height="250"></canvas>
+                    <p class="comparison-desc">All 3 modes converge to the <strong>mean trajectory</strong> — a path the pedestrian would never actually take. The model plays it "safe" but predicts nothing useful.</p>
+                </div>
+                <div class="comparison-card good">
+                    <div class="comparison-header">
+                        <span class="comparison-badge good-badge">✅ MoK Loss</span>
+                        <h3>True Diversity</h3>
+                    </div>
+                    <canvas id="mok-canvas" width="350" height="250"></canvas>
+                    <p class="comparison-desc">Each mode explores a <strong>distinct plausible future</strong>: straight ahead, turn left, turn right. The winner gets rewarded; losers keep exploring.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loss Bars -->
+        <section class="loss-bars-section">
+            <h2 class="section-title">Live Loss Breakdown</h2>
+            <div class="loss-container" id="loss-container">
+                <div class="loss-bar-group">
+                    <div class="loss-label">Mode 1 <span class="loss-value" id="loss-1">—</span></div>
+                    <div class="loss-bar-track">
+                        <div class="loss-bar mode-1" id="bar-1"></div>
+                    </div>
+                </div>
+                <div class="loss-bar-group">
+                    <div class="loss-label">Mode 2 <span class="loss-value" id="loss-2">—</span></div>
+                    <div class="loss-bar-track">
+                        <div class="loss-bar mode-2" id="bar-2"></div>
+                    </div>
+                </div>
+                <div class="loss-bar-group">
+                    <div class="loss-label">Mode 3 <span class="loss-value" id="loss-3">—</span></div>
+                    <div class="loss-bar-track">
+                        <div class="loss-bar mode-3" id="bar-3"></div>
+                    </div>
+                </div>
+                <div class="loss-gradient-text" id="gradient-status">
+                    Gradient: <span>Waiting...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>A.E.G.I.S. — Autonomous Ego-centric Graph Intelligence System</p>
+            <p class="footer-sub">Built for the Route Force Hackathon · SE(2) Equivariant · Bézier Parameterized · Multi-Modal</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

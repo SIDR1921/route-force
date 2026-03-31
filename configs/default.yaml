@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════
+#  A.E.G.I.S. — Configuration
+#  Autonomous Ego-centric Graph Intelligence System
+# ═══════════════════════════════════════════════════════════════
+
+data:
+  dataroot: "./data"                  # Path to extracted nuScenes dataset
+  version: "v1.0-mini"               # nuScenes version
+  history_steps: 4                    # Number of past keyframes (nuScenes: 2Hz, so 4 = 2s)
+  future_steps: 12                    # Number of future keyframes to predict (12 = 6s)
+  prediction_steps: 12               # Prediction timesteps (matches future_steps for direct evaluation)
+  radius: 10.0                       # Social graph radius in meters
+  categories:                        # Agent categories to track
+    - "human.pedestrian.adult"
+    - "human.pedestrian.child"
+    - "human.pedestrian.construction_worker"
+    - "human.pedestrian.police_officer"
+    - "vehicle.car"
+    - "vehicle.truck"
+    - "vehicle.bus.rigid"
+  train_scenes: [0, 1, 2, 3, 4, 5, 6, 7]   # Scene indices for training
+  val_scenes: [8, 9]                          # Scene indices for validation
+
+model:
+  node_feat_dim: 10                   # 2D position × (history_steps + 1) = 10
+  hidden_dim: 128                     # EGNN hidden dimension
+  num_egnn_layers: 3                  # Number of E(2) equivariant layers
+  num_modes: 3                        # Multi-modal predictions (3 futures)
+  num_control_points: 4               # Cubic Bézier control points
+  dropout: 0.1                        # Dropout rate
+
+training:
+  epochs: 80                          # Total training epochs
+  batch_size: 16                      # Batch size (smaller for nuScenes-mini stability)
+  lr: 1.0e-3                          # Learning rate
+  weight_decay: 1.0e-4                # AdamW weight decay
+  max_grad_norm: 2.0                  # Gradient clipping norm
+  scheduler: "onecycle"               # LR scheduler type
+  pct_start: 0.3                      # OneCycleLR warmup fraction
+  checkpoint_dir: "./checkpoints"     # Directory for model checkpoints
+  save_every: 10                      # Save checkpoint every N epochs
+  log_every: 1                        # Log metrics every N epochs
+
+loss:
+  beta: 1.0                            # Huber loss threshold
+  diversity_weight: 0.01               # Low diversity weight prevents loss explosion
+
+inference:
+  tta_rotations: [0, 90, 180, 270]    # Test-time augmentation rotation angles
+  checkpoint: "./checkpoints/best.pt" # Path to best model checkpoint
